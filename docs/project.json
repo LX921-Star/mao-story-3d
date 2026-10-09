@@ -1,8 +1,8 @@
 {
   "project_type": "web",
   "sub_project_type": "",
-  "name": "Mao Life Story Map",
-  "app_slug": "mao-life-story-map",
-  "version_description": "Add standalone offline HTML and deployable zip package",
+  "name": "毛泽东生平时空叙事3D地图",
+  "app_slug": "mao-story-3d",
+  "version_description": "Add visual content editor backend",
   "preview_type": "pc"
 }
