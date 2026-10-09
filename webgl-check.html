@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>环境检测 - 3D 地图为什么打不开</title>
+<style>
+  body { margin:0; background:#0d0a12; color:#e8dcc0; font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+         padding:32px 20px; line-height:1.8; }
+  .wrap { max-width:720px; margin:0 auto; }
+  h1 { font-size:22px; letter-spacing:2px; color:#f0d99a; border-bottom:1px solid #6a4a20; padding-bottom:14px; }
+  .card { background:#171020; border:1px solid #3a2a45; border-radius:12px; padding:18px 20px; margin:16px 0; }
+  .ok { color:#6ee7a0; font-weight:700; }
+  .bad { color:#ff6b6b; font-weight:700; }
+  .warn { color:#ffc94d; font-weight:700; }
+  .k { color:#9a8fb0; }
+  code { background:#241a30; padding:2px 7px; border-radius:5px; color:#f0d99a; font-size:13px; }
+  .result { font-size:36px; text-align:center; margin:20px 0; letter-spacing:4px; }
+  ul { padding-left:20px; } li { margin:8px 0; }
+  .big { font-size:15px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>环境检测报告</h1>
+  <div class="result" id="verdict">检测中…</div>
+  <div class="card" id="details"></div>
+  <div class="card">
+    <div class="big"><b>根据结果怎么解决：</b></div>
+    <ul id="advice"></ul>
+  </div>
+</div>
+<script>
+(function () {
+  var c = document.createElement('canvas');
+  var gl = null, err = '';
+  try { gl = c.getContext('webgl2') || c.getContext('webgl') || c.getContext('experimental-webgl'); }
+  catch (e) { err = e.message; }
+
+  var rows = [];
+  rows.push(['浏览器', navigator.userAgent]);
+  rows.push(['是否支持 WebGL', gl ? '支持 ✓' : '不支持 ✗']);
+  if (gl) {
+    try {
+      var dbg = gl.getExtension('WEBGL_debug_renderer_info');
+      rows.push(['渲染器', dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)]);
+      rows.push(['WebGL 版本', gl.getParameter(gl.VERSION)]);
+    } catch (e) { rows.push(['渲染器', '读取失败']); }
+    if (gl.getExtension) {
+      rows.push(['2D 加速 canvas', c.getContext('2d') ? '可用 ✓' : '不可用 ✗']);
+    }
+  } else if (err) {
+    rows.push(['错误信息', err]);
+  }
+  rows.push(['页面协议', location.protocol]);
+
+  var d = document.getElementById('details');
+  d.innerHTML = rows.map(function (r) {
+    return '<div><span class="k">' + r[0] + '：</span>' + String(r[1]).slice(0, 220) + '</div>';
+  }).join('');
+
+  var verdict = document.getElementById('verdict');
+  var advice = document.getElementById('advice');
+  var tips = [];
+  if (gl) {
+    verdict.innerHTML = '<span class="ok">环境正常，可以运行 3D 地图</span>';
+    tips.push('你的浏览器支持 WebGL，理论上能打开那个 3D 页面。');
+    tips.push('如果主页面仍是白屏，请尝试：<b>按 Ctrl+F5 强制刷新</b>，或换 Chrome / Edge 重新打开。');
+    tips.push('确认文件已完整下载（<b>约 1.3 MB</b>，如果只有几十 KB 说明没下完）。');
+  } else {
+    verdict.innerHTML = '<span class="bad">WebGL 不可用 —— 这就是打不开的原因</span>';
+    tips.push('<b>换用 Chrome 或 Edge 最新版</b>打开（这是最有效的方法）。');
+    tips.push('如果是 Chrome 仍不行：地址栏输入 <code>chrome://gpu</code> 查看 WebGL 是否被禁用。');
+    tips.push('尝试开启硬件加速：Chrome 设置 → 系统 → 开启「使用图形加速功能」，然后重启浏览器。');
+    tips.push('若电脑是较老的 Windows 7 / 集显机型，更新<b>显卡驱动</b>，或改用手机查看（你已验证手机可用）。');
+  }
+  advice.innerHTML = tips.map(function (t) { return '<li>' + t + '</li>'; }).join('');
+})();
+</script>
+</body>
+</html>

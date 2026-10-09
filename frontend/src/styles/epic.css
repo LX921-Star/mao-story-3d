@@ -1,0 +1,893 @@
+/* ============================================================
+   毛泽东生平时空叙事 3D 地图 —— 沉浸式电影感样式
+   ------------------------------------------------------------
+   设计基调：暗调深夜底 / 庄重红 / 烫金，字距疏朗，庄重史诗。
+   所有颜色、字号、间距、动效均使用设计系统 CSS 变量。
+   ============================================================ */
+
+/* ---------- 页面根：全屏锁定，禁止滚动（阶段 6 解锁） ---------- */
+.epic-root {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #05040a;
+  color: var(--epic-gold-soft);
+  font-family: var(--font-family);
+  -webkit-font-smoothing: antialiased;
+  /* 电影级深红金基调变量（本页专用，补充全局设计系统） */
+  --epic-gold: #e8c86a;
+  --epic-gold-bright: #f7e2a0;
+  --epic-gold-soft: #d9c08a;
+  --epic-red: #c41e20;
+  --epic-red-deep: #7a1418;
+  --epic-ink: #08060a;
+  --epic-panel: rgba(22, 8, 10, 0.72);
+}
+
+/* ---------- WebGL 画布 ---------- */
+.epic-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 1;
+  cursor: default;
+}
+
+/* ---------- 时代氛围背景层（随事件切换） ---------- */
+.epic-ambient {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  transition: background 2400ms cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 2400ms cubic-bezier(0.4, 0, 0.2, 1);
+  mix-blend-mode: screen;
+  opacity: 0.9;
+}
+
+/* 暗角：聚焦画面中心，增强电影感 */
+.epic-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 78% 68% at 50% 46%,
+    rgba(0, 0, 0, 0) 42%,
+    rgba(0, 0, 0, 0.42) 78%,
+    rgba(0, 0, 0, 0.82) 100%
+  );
+}
+
+/* 电影噪点 / 颗粒肌理 */
+.epic-grain {
+  position: absolute;
+  inset: -50%;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grainShift 0.9s steps(3) infinite;
+}
+@keyframes grainShift {
+  0% { transform: translate(0, 0); }
+  33% { transform: translate(-3%, 2%); }
+  66% { transform: translate(2%, -3%); }
+  100% { transform: translate(0, 0); }
+}
+
+/* 上下电影黑边 */
+.epic-letterbox {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  z-index: 6;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(3, 2, 5, 0.96), rgba(3, 2, 5, 0));
+  transition: height 1600ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.epic-letterbox.top { top: 0; }
+.epic-letterbox.bottom {
+  bottom: 0;
+  background: linear-gradient(0deg, rgba(3, 2, 5, 0.96), rgba(3, 2, 5, 0));
+}
+.epic-letterbox.show { height: 7vh; }
+
+/* ============================================================
+   阶段 1：开篇入场 —— 青年毛泽东肖像
+   ============================================================ */
+.epic-intro {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition: opacity 1400ms cubic-bezier(0.4, 0, 0.2, 1),
+              filter 1400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.epic-intro.hidden {
+  opacity: 0;
+  filter: blur(14px);
+}
+
+/* 肖像容器 */
+.epic-portrait {
+  position: relative;
+  width: min(46vh, 380px);
+  height: min(62vh, 520px);
+  opacity: 0;
+  transform: scale(0.94) translateY(22px);
+  animation: portraitRise 2600ms cubic-bezier(0.16, 1, 0.3, 1) 200ms forwards;
+}
+@keyframes portraitRise {
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* 肖像底部辉光，营造"远眺山河"的静谧光影 */
+.epic-portrait::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -6%;
+  width: 140%;
+  height: 40%;
+  transform: translateX(-50%);
+  background: radial-gradient(
+    ellipse at center,
+    rgba(232, 200, 106, 0.28) 0%,
+    rgba(196, 30, 32, 0.16) 40%,
+    rgba(0, 0, 0, 0) 72%
+  );
+  filter: blur(14px);
+  pointer-events: none;
+}
+
+.epic-portrait svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  /* 暗调静谧：降低不透明度，金色边缘光 */
+  filter: drop-shadow(0 0 38px rgba(196, 30, 32, 0.42));
+}
+
+/* 肖像旁的光斑粒子 */
+.epic-mote {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(247, 226, 160, 0.9), rgba(247, 226, 160, 0));
+  pointer-events: none;
+  animation: moteFloat linear infinite;
+}
+@keyframes moteFloat {
+  0% { transform: translateY(0) scale(0.6); opacity: 0; }
+  20% { opacity: 0.9; }
+  100% { transform: translateY(-140px) scale(1.1); opacity: 0; }
+}
+
+/* 开篇标题 */
+.epic-intro-title {
+  margin-top: var(--spacing-xl);
+  text-align: center;
+  opacity: 0;
+  animation: titleIn 2000ms cubic-bezier(0.16, 1, 0.3, 1) 1200ms forwards;
+}
+@keyframes titleIn {
+  from { opacity: 0; transform: translateY(18px); letter-spacing: 0.6em; }
+  to { opacity: 1; transform: translateY(0); letter-spacing: 0.34em; }
+}
+.epic-intro-title h1 {
+  font-size: clamp(1.6rem, 4.2vw, 2.9rem);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.34em;
+  color: var(--epic-gold-bright);
+  text-shadow: 0 0 26px rgba(232, 200, 106, 0.4), 0 2px 4px rgba(0, 0, 0, 0.8);
+  margin: 0;
+}
+.epic-intro-title p {
+  margin-top: var(--spacing-md);
+  font-size: var(--font-size-label);
+  letter-spacing: 0.42em;
+  color: var(--epic-gold-soft);
+  opacity: 0.82;
+}
+
+/* ============================================================
+   通用 HUD 元素
+   ============================================================ */
+
+/* 左侧阶段指示器 */
+.epic-phase-rail {
+  position: absolute;
+  left: var(--spacing-xl);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 900ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.epic-phase-rail.visible { opacity: 1; }
+.epic-phase-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-small);
+  letter-spacing: 0.18em;
+  color: var(--epic-gold-soft);
+  opacity: 0.35;
+  transition: opacity 700ms cubic-bezier(0.4, 0, 0.2, 1),
+              color 700ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.epic-phase-item.active {
+  opacity: 1;
+  color: var(--epic-gold-bright);
+}
+.epic-phase-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--epic-red);
+  box-shadow: 0 0 8px rgba(196, 30, 32, 0.8);
+  transition: all 700ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.epic-phase-item.active .epic-phase-dot {
+  background: var(--epic-gold-bright);
+  box-shadow: 0 0 14px rgba(247, 226, 160, 0.95);
+  transform: scale(1.5);
+}
+.epic-phase-label { white-space: nowrap; }
+
+/* 加载提示 */
+.epic-loading {
+  position: absolute;
+  left: 50%;
+  bottom: 14vh;
+  transform: translateX(-50%);
+  z-index: 13;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--epic-panel);
+  border: 1px solid rgba(232, 200, 106, 0.24);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(10px);
+  font-size: var(--font-size-label);
+  letter-spacing: 0.22em;
+  color: var(--epic-gold-bright);
+  opacity: 0;
+  transition: opacity 600ms var(--ease-default);
+  pointer-events: none;
+}
+.epic-loading.visible { opacity: 1; }
+.epic-loading .spin {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(232, 200, 106, 0.25);
+  border-top-color: var(--epic-gold-bright);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* 目光牵引提示 */
+.epic-gaze {
+  position: absolute;
+  inset: 0;
+  z-index: 11;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 800ms var(--ease-default);
+}
+.epic-gaze.visible { opacity: 1; }
+/* 视线光带：从中心向纵深射出 */
+.epic-gaze::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2px;
+  height: 60vh;
+  transform: translate(-50%, -50%) scaleY(0);
+  transform-origin: center;
+  background: linear-gradient(180deg,
+    rgba(247, 226, 160, 0) 0%,
+    rgba(247, 226, 160, 0.7) 50%,
+    rgba(247, 226, 160, 0) 100%);
+  filter: blur(1.5px);
+  animation: gazeBeam 2200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes gazeBeam {
+  0% { transform: translate(-50%, -50%) scaleY(0); opacity: 0; }
+  35% { opacity: 1; }
+  100% { transform: translate(-50%, -50%) scaleY(1); opacity: 0; }
+}
+
+/* ============================================================
+   阶段 3：事件悬浮卡
+   ============================================================ */
+.epic-event-card {
+  position: absolute;
+  left: var(--spacing-2xl);
+  bottom: 12vh;
+  z-index: 14;
+  width: min(420px, 34vw);
+  padding: var(--spacing-xl);
+  background: linear-gradient(145deg, rgba(30, 9, 12, 0.88), rgba(12, 5, 7, 0.9));
+  border: 1px solid rgba(232, 200, 106, 0.28);
+  border-left: 3px solid var(--epic-red);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6),
+              inset 0 1px 0 rgba(247, 226, 160, 0.08);
+  opacity: 0;
+  transform: translateY(26px) translateX(-14px);
+  transition: opacity 1000ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 1000ms cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+.epic-event-card.visible {
+  opacity: 1;
+  transform: translateY(0) translateX(0);
+}
+.epic-event-card .card-index {
+  font-size: var(--font-size-small);
+  letter-spacing: 0.3em;
+  color: var(--epic-red);
+  text-shadow: 0 0 10px rgba(196, 30, 32, 0.6);
+  margin-bottom: var(--spacing-xs);
+}
+.epic-event-card .card-year {
+  font-size: var(--font-size-display);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.06em;
+  line-height: 1;
+  color: var(--epic-gold-bright);
+  text-shadow: 0 0 30px rgba(232, 200, 106, 0.42);
+}
+.epic-event-card .card-loc {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: var(--spacing-sm);
+  font-size: var(--font-size-label);
+  letter-spacing: 0.16em;
+  color: var(--epic-gold-soft);
+  opacity: 0.9;
+}
+.epic-event-card .card-loc::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--epic-gold-bright);
+  box-shadow: 0 0 8px var(--epic-gold-bright);
+}
+.epic-event-card .card-title {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid rgba(232, 200, 106, 0.16);
+  font-size: var(--font-size-title);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.1em;
+  color: #f3e6c8;
+}
+.epic-event-card .card-brief {
+  margin-top: var(--spacing-md);
+  font-size: var(--font-size-label);
+  line-height: 1.9;
+  letter-spacing: 0.04em;
+  color: rgba(222, 205, 172, 0.9);
+  text-align: justify;
+}
+
+/* 顶部中央：当前年份大标题（遥相呼应地图聚焦） */
+.epic-year-banner {
+  position: absolute;
+  top: 9vh;
+  left: 50%;
+  transform: translateX(-50%) translateY(-14px);
+  z-index: 14;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 900ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 900ms cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+.epic-year-banner.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.epic-year-banner .yb-year {
+  font-size: clamp(2.2rem, 6vw, 4.6rem);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.12em;
+  color: transparent;
+  background: linear-gradient(180deg, #fff3d0, var(--epic-gold), #b8892f);
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(0 0 26px rgba(232, 200, 106, 0.55));
+  line-height: 1;
+}
+.epic-year-banner .yb-title {
+  margin-top: var(--spacing-sm);
+  font-size: var(--font-size-title);
+  letter-spacing: 0.5em;
+  color: var(--epic-gold-soft);
+  text-shadow: 0 0 16px rgba(0, 0, 0, 0.9);
+}
+
+/* ============================================================
+   阶段 4：终章史诗标题
+   ============================================================ */
+.epic-finale {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1600ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.epic-finale.visible { opacity: 1; }
+.epic-finale .finale-main {
+  font-size: clamp(2.4rem, 8vw, 6rem);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.28em;
+  color: transparent;
+  background: linear-gradient(180deg, #fff6dc 0%, var(--epic-gold) 45%, #a8621a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(0 0 44px rgba(232, 200, 106, 0.6));
+  text-align: center;
+  animation: finalePulse 3.4s ease-in-out infinite;
+}
+@keyframes finalePulse {
+  0%, 100% { filter: drop-shadow(0 0 34px rgba(232, 200, 106, 0.5)); }
+  50% { filter: drop-shadow(0 0 58px rgba(255, 190, 90, 0.85)); }
+}
+.epic-finale .finale-sub {
+  margin-top: var(--spacing-lg);
+  font-size: var(--font-size-label);
+  letter-spacing: 0.62em;
+  color: var(--epic-gold-soft);
+  opacity: 0.9;
+}
+
+/* ============================================================
+   阶段 5：解锁提示
+   ============================================================ */
+.epic-unlock {
+  position: absolute;
+  right: var(--spacing-2xl);
+  bottom: 11vh;
+  z-index: 14;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--epic-panel);
+  border: 1px solid rgba(232, 200, 106, 0.22);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(10px);
+  text-align: right;
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 1000ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 1000ms cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+.epic-unlock.visible { opacity: 1; transform: translateY(0); }
+.epic-unlock .u-title {
+  font-size: var(--font-size-label);
+  letter-spacing: 0.2em;
+  color: var(--epic-gold-bright);
+}
+.epic-unlock .u-desc {
+  margin-top: 6px;
+  font-size: var(--font-size-small);
+  letter-spacing: 0.1em;
+  color: var(--epic-gold-soft);
+  opacity: 0.78;
+}
+.epic-unlock .u-scroll {
+  margin-top: var(--spacing-sm);
+  font-size: var(--font-size-small);
+  letter-spacing: 0.14em;
+  color: var(--epic-red);
+  animation: scrollHint 2s ease-in-out infinite;
+}
+@keyframes scrollHint {
+  0%, 100% { transform: translateY(0); opacity: 0.7; }
+  50% { transform: translateY(5px); opacity: 1; }
+}
+
+/* 悬停预览小气泡 */
+.epic-hover-tip {
+  position: fixed;
+  z-index: 40;
+  padding: 8px 14px;
+  background: rgba(18, 6, 8, 0.92);
+  border: 1px solid rgba(232, 200, 106, 0.35);
+  border-radius: var(--radius-md);
+  backdrop-filter: blur(8px);
+  font-size: var(--font-size-small);
+  letter-spacing: 0.12em;
+  color: var(--epic-gold-bright);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -130%) scale(0.95);
+  transition: opacity 200ms var(--ease-default), transform 200ms var(--ease-default);
+}
+.epic-hover-tip.visible { opacity: 1; transform: translate(-50%, -130%) scale(1); }
+.epic-hover-tip .ht-year {
+  color: var(--epic-red);
+  margin-right: 8px;
+  font-weight: var(--font-weight-semibold);
+}
+
+/* ============================================================
+   跳过按钮
+   ============================================================ */
+.epic-skip {
+  position: absolute;
+  right: var(--spacing-xl);
+  top: var(--spacing-xl);
+  z-index: 30;
+  padding: 9px 20px;
+  background: rgba(18, 6, 8, 0.6);
+  border: 1px solid rgba(232, 200, 106, 0.3);
+  border-radius: 999px;
+  color: var(--epic-gold-soft);
+  font-size: var(--font-size-small);
+  letter-spacing: 0.2em;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: all 300ms var(--ease-default);
+}
+.epic-skip:hover {
+  color: var(--epic-gold-bright);
+  border-color: rgba(232, 200, 106, 0.7);
+  background: rgba(60, 12, 14, 0.75);
+  box-shadow: 0 0 20px rgba(196, 30, 32, 0.4);
+}
+.epic-skip.hidden { opacity: 0; pointer-events: none; }
+
+/* ============================================================
+   节奏档位切换（右上角，叙事期间可随时调整快慢）
+   ============================================================ */
+.epic-pace-bar {
+  position: absolute;
+  right: var(--spacing-xl);
+  top: calc(var(--spacing-xl) + 52px);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 6px 5px 12px;
+  background: rgba(18, 6, 8, 0.6);
+  border: 1px solid rgba(232, 200, 106, 0.22);
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+}
+.epic-pace-bar .pace-label {
+  font-size: var(--font-size-small);
+  letter-spacing: 0.2em;
+  color: var(--epic-gold-soft);
+  opacity: 0.66;
+  margin-right: 2px;
+}
+.epic-pace-bar .pace-btn {
+  padding: 4px 12px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--epic-gold-soft);
+  font-size: var(--font-size-small);
+  letter-spacing: 0.14em;
+  cursor: pointer;
+  transition: all 300ms var(--ease-default);
+}
+.epic-pace-bar .pace-btn:hover {
+  color: var(--epic-gold-bright);
+  background: rgba(196, 30, 32, 0.22);
+}
+.epic-pace-bar .pace-btn.active {
+  color: #1a0508;
+  background: linear-gradient(180deg, var(--epic-gold-bright), var(--epic-gold));
+  box-shadow: 0 0 14px rgba(232, 200, 106, 0.5);
+}
+
+/* ============================================================
+   阶段 6：竖向生平时间轴
+   ============================================================ */
+.epic-timeline-wrap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 20;
+  /* 初始不可见，滚动后展开 */
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.epic-timeline-wrap.visible { opacity: 1; }
+
+/* 地图收束置顶区域（阶段 6 时 3D 画布收缩为顶部视窗） */
+.epic-stage-shrink {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 100vh;
+  z-index: 1;
+  transition: height 1400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.epic-stage-shrink.shrunk { height: 44vh; }
+
+/* 时间轴滚动容器 */
+.epic-timeline {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 100vh;
+  bottom: 0;
+  z-index: 21;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: linear-gradient(180deg, rgba(6, 4, 9, 0.2) 0%, rgba(6, 4, 9, 0.96) 12%, #05040a 100%);
+  transition: top 1400ms cubic-bezier(0.16, 1, 0.3, 1);
+  padding: var(--spacing-3xl) 0 18vh;
+  pointer-events: none;
+}
+.epic-timeline.open {
+  top: 44vh;
+  pointer-events: auto;
+}
+/* 自定义滚动条 */
+.epic-timeline::-webkit-scrollbar { width: 6px; }
+.epic-timeline::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.03); }
+.epic-timeline::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--epic-red), var(--epic-gold));
+  border-radius: 3px;
+}
+
+.epic-timeline-inner {
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-xl);
+}
+
+.epic-timeline-head {
+  text-align: center;
+  margin-bottom: var(--spacing-3xl);
+}
+.epic-timeline-head h2 {
+  font-size: var(--font-size-headline);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.36em;
+  color: var(--epic-gold-bright);
+  text-shadow: 0 0 26px rgba(232, 200, 106, 0.4);
+}
+.epic-timeline-head p {
+  margin-top: var(--spacing-md);
+  font-size: var(--font-size-label);
+  letter-spacing: 0.3em;
+  color: var(--epic-gold-soft);
+  opacity: 0.7;
+}
+/* 标题下的金色分隔线 */
+.epic-timeline-head .rule {
+  width: 120px;
+  height: 1px;
+  margin: var(--spacing-lg) auto 0;
+  background: linear-gradient(90deg, transparent, var(--epic-gold), transparent);
+}
+
+/* 时间轴主干 */
+.epic-tl-list {
+  position: relative;
+  padding-left: 46px;
+}
+/* 中轴线 */
+.epic-tl-list::before {
+  content: '';
+  position: absolute;
+  left: 14px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg,
+    rgba(232, 200, 106, 0) 0%,
+    rgba(232, 200, 106, 0.5) 8%,
+    rgba(196, 30, 32, 0.65) 50%,
+    rgba(232, 200, 106, 0.5) 92%,
+    rgba(232, 200, 106, 0) 100%);
+}
+
+/* 单个时间轴条目 */
+.epic-tl-item {
+  position: relative;
+  margin-bottom: var(--spacing-2xl);
+  padding: var(--spacing-lg) var(--spacing-xl);
+  background: linear-gradient(135deg, rgba(28, 9, 12, 0.66), rgba(10, 5, 8, 0.55));
+  border: 1px solid rgba(232, 200, 106, 0.14);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  transition: all 480ms cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 0;
+  transform: translateY(30px);
+}
+.epic-tl-item.reveal {
+  opacity: 1;
+  transform: translateY(0);
+}
+.epic-tl-item:hover {
+  border-color: rgba(232, 200, 106, 0.5);
+  background: linear-gradient(135deg, rgba(50, 14, 16, 0.8), rgba(16, 7, 10, 0.7));
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.5), 0 0 32px rgba(196, 30, 32, 0.22);
+  transform: translateY(-3px);
+}
+.epic-tl-item.active {
+  border-color: rgba(247, 226, 160, 0.75);
+  box-shadow: 0 0 40px rgba(232, 200, 106, 0.28);
+}
+
+/* 时间轴圆点 */
+.epic-tl-dot {
+  position: absolute;
+  left: -39px;
+  top: 30px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--epic-red);
+  border: 2px solid var(--epic-gold);
+  box-shadow: 0 0 12px rgba(196, 30, 32, 0.8);
+  transition: all 480ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.epic-tl-item:hover .epic-tl-dot,
+.epic-tl-item.active .epic-tl-dot {
+  background: var(--epic-gold-bright);
+  box-shadow: 0 0 20px var(--epic-gold-bright);
+  transform: scale(1.35);
+}
+
+/* 条目头部：年份 + 标题 */
+.epic-tl-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+.epic-tl-year {
+  font-size: var(--font-size-headline);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.04em;
+  color: var(--epic-gold-bright);
+  text-shadow: 0 0 18px rgba(232, 200, 106, 0.35);
+  line-height: 1;
+}
+.epic-tl-title {
+  font-size: var(--font-size-title);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.1em;
+  color: #f0e2c4;
+}
+.epic-tl-loc {
+  margin-left: auto;
+  font-size: var(--font-size-small);
+  letter-spacing: 0.16em;
+  color: var(--epic-gold-soft);
+  opacity: 0.72;
+}
+
+/* 条目简介 */
+.epic-tl-brief {
+  margin-top: var(--spacing-md);
+  font-size: var(--font-size-label);
+  line-height: 1.95;
+  letter-spacing: 0.04em;
+  color: rgba(220, 203, 172, 0.86);
+  text-align: justify;
+}
+
+/* 展开的详情（历史背景） */
+.epic-tl-detail {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 700ms cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 600ms var(--ease-default),
+              margin-top 600ms var(--ease-default);
+  opacity: 0;
+}
+.epic-tl-item.active .epic-tl-detail {
+  max-height: 460px;
+  opacity: 1;
+  margin-top: var(--spacing-lg);
+}
+.epic-tl-detail .dt-label {
+  display: inline-block;
+  font-size: var(--font-size-small);
+  letter-spacing: 0.24em;
+  color: var(--epic-red);
+  margin-bottom: var(--spacing-xs);
+}
+.epic-tl-detail .dt-text {
+  font-size: var(--font-size-label);
+  line-height: 1.95;
+  letter-spacing: 0.03em;
+  color: rgba(232, 216, 186, 0.92);
+  padding: var(--spacing-md);
+  background: rgba(196, 30, 32, 0.07);
+  border-left: 2px solid var(--epic-red);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  text-align: justify;
+}
+
+/* 结尾落款 */
+.epic-timeline-foot {
+  margin-top: var(--spacing-3xl);
+  text-align: center;
+  padding-bottom: var(--spacing-2xl);
+}
+.epic-timeline-foot .foot-line {
+  width: 200px;
+  height: 1px;
+  margin: 0 auto var(--spacing-lg);
+  background: linear-gradient(90deg, transparent, var(--epic-gold), transparent);
+}
+.epic-timeline-foot .foot-text {
+  font-size: var(--font-size-label);
+  letter-spacing: 0.4em;
+  color: var(--epic-gold-soft);
+  opacity: 0.72;
+}
+
+/* ============================================================
+   响应式适配
+   ============================================================ */
+@media (max-aspect-ratio: 1/1) {
+  .epic-phase-rail { display: none; }
+  .epic-event-card {
+    left: 50%;
+    bottom: 8vh;
+    width: min(90vw, 460px);
+    transform: translateX(-50%) translateY(26px);
+  }
+  .epic-event-card.visible { transform: translateX(-50%) translateY(0); }
+  .epic-unlock {
+    right: 50%;
+    transform: translateX(50%) translateY(14px);
+    text-align: center;
+  }
+  .epic-unlock.visible { transform: translateX(50%) translateY(0); }
+  .epic-timeline-inner { padding: 0 var(--spacing-md); }
+}
+
+@media (max-width: 640px) {
+  .epic-portrait { width: min(60vw, 300px); height: min(52vh, 400px); }
+  .epic-tl-item { padding: var(--spacing-md); }
+  .epic-tl-loc { margin-left: 0; width: 100%; margin-top: 6px; }
+  .epic-year-banner .yb-title { letter-spacing: 0.28em; font-size: var(--font-size-label); }
+}
+
+/* 尊重用户的"减少动效"偏好 */
+@media (prefers-reduced-motion: reduce) {
+  .epic-grain, .epic-mote { animation: none; }
+  .epic-finale .finale-main { animation: none; }
+}
