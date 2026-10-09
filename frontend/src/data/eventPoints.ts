@@ -65,7 +65,7 @@ export const eventPoints: EventPoint[] = [
     year: '1918',
     name: '北京·红楼',
     location: '北京大学图书馆',
-    lat: 39.92, lng: 116.40,
+    lat: 39.92, lng: 116.4,
     title: '初到北京·接触十月革命',
     brief:
       '1918年8月，为组织湖南赴法勤工俭学第一次到北京，在北京大学图书馆任助理员，得李大钊等人帮助，开始接受俄国十月革命的思想影响。',
@@ -153,7 +153,7 @@ export const eventPoints: EventPoint[] = [
     year: '1938',
     name: '延安',
     location: '陕西延安',
-    lat: 36.60, lng: 109.49,
+    lat: 36.6, lng: 109.49,
     title: '《论持久战》',
     brief:
       '1938年5月，撰写《论持久战》，科学预见抗战将经战略防御、战略相持、战略反攻三阶段，坚定了全国人民抗战必胜的信心。',
@@ -208,7 +208,7 @@ export const eventPoints: EventPoint[] = [
     year: '1971',
     name: '北京·联合国席位',
     location: '北京·联合国恢复中国合法席位',
-    lat: 39.92, lng: 116.40,
+    lat: 39.92, lng: 116.4,
     title: '恢复联合国合法席位',
     brief:
       '1971年，推动中国恢复在联合国的合法席位，新中国在国际舞台上站稳脚跟，打开对外交往新局面。',
@@ -219,7 +219,7 @@ export const eventPoints: EventPoint[] = [
     year: '1976',
     name: '北京',
     location: '北京',
-    lat: 39.91, lng: 116.40,
+    lat: 39.91, lng: 116.4,
     title: '逝世',
     brief:
       '1976年9月9日在北京逝世。他为中国革命和建设事业奋斗终生，其功绩与思想永远铭刻在民族记忆中。',
