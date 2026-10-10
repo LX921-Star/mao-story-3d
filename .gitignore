@@ -7,10 +7,10 @@ backend/node_modules/
 frontend/dist/
 backend/dist/
 
-# 单文件成品（由构建自动生成）
-mao-story.html
-index.html
-*.zip
+# 单文件成品（由构建自动生成，只在根目录忽略；frontend/index.html 是源码入口，必须入库）
+/mao-story.html
+/index.html
+/*.zip
 
 # 环境变量
 .env
