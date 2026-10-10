@@ -15,6 +15,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { EventBackdrop, type EventTheme } from './EventBackdrop';
 import { CHINA_GEOJSON } from '../data/chinaGeo';
 
 /* ============================================================
@@ -166,6 +167,8 @@ export class ChinaMapScene {
   /* ---- 背景元素 ---- */
   backdrop?: THREE.Mesh;
   backdropMat?: THREE.ShaderMaterial;
+  /** 事件 3D 立体背景（按主题淡入淡出的环形剪影场景） */
+  eventBackdrop?: EventBackdrop;
   glowDisc?: THREE.Mesh;
   glowMat?: THREE.MeshBasicMaterial;
   starDust?: THREE.Points;
@@ -214,6 +217,9 @@ export class ChinaMapScene {
     this.handleResize();
 
     this.animate = this.animate.bind(this);
+
+    // 调试钩子：控制台可通过 __maoScene 直接操作场景（也便于组员调试）
+    (window as unknown as { __maoScene?: ChinaMapScene }).__maoScene = this;
   }
 
   /* ---- 渲染器 ---- */
@@ -584,6 +590,18 @@ export class ChinaMapScene {
     this.outlineLines.push(line);
   }
 
+  /** 显示事件 3D 立体背景（指定主题，淡入） */
+  showEventBackdrop(theme: EventTheme): void {
+    if (this.disposed) return;
+    if (!this.eventBackdrop) this.eventBackdrop = new EventBackdrop(this.scene);
+    this.eventBackdrop.show(theme);
+  }
+
+  /** 隐藏事件 3D 立体背景（淡出） */
+  hideEventBackdrop(): void {
+    if (this.eventBackdrop) this.eventBackdrop.hide();
+  }
+
   /** 地图整体辉光（阶段 4 鎏金覆盖：用一层叠加的发光轮廓面） */
   buildGoldOverlay() {
     // 使用与省域相同的 Shape 生成一层「顶面薄片」，镀金叠加
@@ -914,6 +932,9 @@ export class ChinaMapScene {
 
     // 背景呼吸
     if (this.backdropMat) this.backdropMat.uniforms.uTime.value = this.time;
+
+    // 事件 3D 立体背景（淡入淡出 + 漂移）
+    if (this.eventBackdrop) this.eventBackdrop.update(dt);
 
     // 星尘缓慢旋转
     if (this.starDust) {

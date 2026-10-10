@@ -14,6 +14,7 @@
 import * as THREE from 'three';
 import { project, Ease, lerp, clamp, MAP } from '../three/ChinaMapScene';
 import type { ChinaMapScene, CameraTweenOpts } from '../three/ChinaMapScene';
+import { backdropThemeFromDesc } from '../three/EventBackdrop';
 import type { NarrativeUI } from '../three/NarrativeUI';
 import { eventPoints } from '../data/eventPoints';
 import type { EventPoint } from '../data/eventPoints';
@@ -319,6 +320,8 @@ export class NarrativeController {
     if (/雪|冬|夜|暗|肃|静/.test(desc)) hue = { r: 0.05, g: 0.03, b: 0.07 };
     if (/红|旗|火|炮|庆|胜/.test(desc)) hue = { r: 0.20, g: 0.03, b: 0.03 };
     this.ui.setAmbient(hue, p);
+    // 事件 3D 立体背景：按 bgDesc 关键词选择主题剪影场景
+    this.scene.showEventBackdrop(backdropThemeFromDesc(desc));
   }
 
   /* ============================================================
@@ -422,6 +425,8 @@ export class NarrativeController {
   applyFinaleState(): void {
     if (!this.scene.goldMat) this.scene.buildGoldOverlay();
     if (this.scene.goldMat) this.scene.goldMat.opacity = 0.55;
+    // 终章以鎏金全景为主，淡出事件剪影背景
+    this.scene.hideEventBackdrop();
     if (this.scene.sparks) {
       this.scene.sparks.forEach((s: { lit: boolean; lightT: number; group: THREE.Group }) => {
         s.lit = true;
